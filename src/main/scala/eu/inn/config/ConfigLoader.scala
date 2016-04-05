@@ -8,6 +8,7 @@ class ConfigLoader(localConfigPropertyName: String, separator: String, failIfCon
   def load(): Config = {
     System.getProperty(localConfigPropertyName, "")
       .split(separator)
+      .filterNot(_.trim.isEmpty)
       .foldLeft(ConfigFactory.load())({ (conf, filePath) ⇒
         val file = new java.io.File(filePath.trim)
         if (!file.exists && failIfConfigNotFound) {
