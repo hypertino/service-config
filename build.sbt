@@ -8,10 +8,10 @@ organization := "eu.inn"
 
 scalaVersion := "2.11.7"
 
-crossScalaVersions := Seq("2.11.7")
+crossScalaVersions := Seq("2.11.8")
 
-libraryDependencies += "com.typesafe" % "config" % "1.2.1"
-
-libraryDependencies += "org.mockito" % "mockito-all" % "1.10.19" % "test"
-
-libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.1" % "test"
+libraryDependencies ++= Seq(
+  "com.typesafe" % "config" % "1.2.1",
+  "org.mockito" % "mockito-all" % "1.10.19" % "test",
+  "org.scalatest" %% "scalatest" % "2.2.6" % "test"
+)
