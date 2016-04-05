@@ -6,7 +6,7 @@ version := "0.1"
 
 organization := "eu.inn"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 crossScalaVersions := Seq("2.11.8")
 
