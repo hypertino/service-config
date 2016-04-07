@@ -1,6 +1,6 @@
 package eu.inn.config
 
-import java.io.{File, IOException}
+import java.io.{File, FileNotFoundException}
 
 import com.typesafe.config.{Config, ConfigFactory}
 
@@ -12,7 +12,7 @@ class ConfigLoader(localConfigPropertyName: String, separator: String, failIfCon
       .foldLeft(ConfigFactory.load())({ (conf, filePath) ⇒
         val file = new java.io.File(filePath.trim)
         if (!file.exists && failIfConfigNotFound) {
-          throw new IOException(s"${file.getAbsolutePath} is not found")
+          throw new FileNotFoundException(s"${file.getAbsolutePath} is not found")
         }
         ConfigFactory.parseFile(file).withFallback(conf)
       })
