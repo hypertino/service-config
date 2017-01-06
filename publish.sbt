@@ -1,6 +1,5 @@
 // Sonatype repositary publish options
 publishMavenStyle := true
-
 publishTo := {
   val nexus = "https://oss.sonatype.org/"
   if (isSnapshot.value)
@@ -10,48 +9,42 @@ publishTo := {
 }
 
 publishArtifact in Test := false
-
 pomIncludeRepository := { _ => false}
 
-pomExtra := <url>https://github.com/InnovaCo/service-config</url>
-  <licenses>
-    <license>
-      <name>BSD-style</name>
-      <url>http://opensource.org/licenses/BSD-3-Clause</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-  <scm>
-    <url>git@github.com:InnovaCo/service-config.git</url>
-    <connection>scm:git:git@github.com:InnovaCo/service-config.git</connection>
-  </scm>
-  <developers>
-    <developer>
-      <id>InnovaCo</id>
-      <name>Innova Co S.a r.l</name>
-      <url>https://github.com/InnovaCo</url>
-    </developer>
-    <developer>
-      <id>maqdev</id>
-      <name>Maga Abdurakhmanov</name>
-      <url>https://github.com/maqdev</url>
-    </developer>
-  </developers>
-
+pomExtra :=
+  <url>https://github.com/hypertino/service-config</url>
+    <licenses>
+      <license>
+        <name>BSD-style</name>
+        <url>http://opensource.org/licenses/BSD-3-Clause</url>
+        <distribution>repo</distribution>
+      </license>
+    </licenses>
+    <scm>
+      <url>git@github.com:hypertino/service-config.git</url>
+      <connection>scm:git:git@github.com:hypertino/service-config.git</connection>
+    </scm>
+    <developers>
+      <developer>
+        <id>maqdev</id>
+        <name>Magomed Abdurakhmanov</name>
+        <url>https://github.com/maqdev</url>
+      </developer>
+      <developer>
+        <id>hypertino</id>
+        <name>Hypertino</name>
+        <url>https://github.com/hypertino</url>
+      </developer>
+    </developers>
 
 // Sonatype credentials
-
 credentials ++= (for {
   username <- Option(System.getenv().get("sonatype_username"))
   password <- Option(System.getenv().get("sonatype_password"))
 } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
 
 // pgp keys and credentials
-
-pgpSecretRing := file("inn-oss-private.asc")
-
-pgpPublicRing := file("inn-oss-public.asc")
-
-usePgpKeyHex("5DF2525FA9D102B7")
-
+pgpSecretRing := file("./travis/ht-oss-private.asc")
+pgpPublicRing := file("./travis/ht-oss-public.asc")
+usePgpKeyHex("F8CDEF49B0EDEDCC")
 pgpPassphrase := Option(System.getenv().get("oss_gpg_passphrase")).map(_.toCharArray)

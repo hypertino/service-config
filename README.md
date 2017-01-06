@@ -1,8 +1,8 @@
 # service-config
 
-[![Build Status](https://travis-ci.org/InnovaCo/service-config.svg?branch=master)](https://travis-ci.org/InnovaCo/service-config)
+[![Build Status](https://travis-ci.org/hypertino/service-config.svg?branch=master)](https://travis-ci.org/hypertino/service-config)
 
-[ Latest Releases ](https://oss.sonatype.org/#nexus-search;gav~eu.inn~service-config_*~~~)
+[ Latest Releases ](https://oss.sonatype.org/#nexus-search;gav~com.hypertino~service-config_*~~~)
 
 **service-config** service configuration loader and extensions.
 

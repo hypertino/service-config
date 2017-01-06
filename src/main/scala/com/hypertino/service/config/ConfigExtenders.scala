@@ -1,4 +1,4 @@
-package eu.inn.config
+package com.hypertino.service.config
 
 import java.util.concurrent.TimeUnit
 

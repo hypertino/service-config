@@ -1,6 +1,6 @@
 import java.io.{File, IOException}
 
-import eu.inn.config.ConfigLoader
+import com.hypertino.service.config.ConfigLoader
 import org.scalatest.{FreeSpec, Matchers}
 
 class TestConfigLoader extends FreeSpec with Matchers {
