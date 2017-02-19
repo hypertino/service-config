@@ -12,7 +12,7 @@ if [[ "$TRAVIS_PULL_REQUEST" == "false" && "$TRAVIS_BRANCH" == "master" ]]; then
   	# wait different time for different jobs, due to race condition releasing in sonatype
   	if [[ "$TRAVIS_JOB_NUMBER" =~ ^[[:digit:]]+\.([[:digit:]]+)$ ]]; then
   		job_number=${BASH_REMATCH[1]}
-  		wait_time=$((($job_number-1)*20))
+  		wait_time=$(( ($job_number-1)*20 ))
   		echo "Waiting for job $job_number ($TRAVIS_JOB_NUMBER) for $wait_time seconds..."
   		sleep $wait_time
   	fi

@@ -7,7 +7,7 @@ import com.typesafe.config.Config
 import scala.concurrent.duration.FiniteDuration
 
 object ConfigExtenders {
-  implicit class ExtendConfig(config: Config) {
+  implicit class ExtendConfig(val config: Config) extends AnyVal {
     def getOptionString(path: String) = opt(path, _.getString)
     def getString(path: String, default: String) = opt(path, _.getString).getOrElse(default)
     def getOptionBoolean(path: String) = opt(path, _.getBoolean)
