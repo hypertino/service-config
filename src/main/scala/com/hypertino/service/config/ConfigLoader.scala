@@ -5,23 +5,14 @@ import java.io.{File, FileNotFoundException}
 import com.typesafe.config.{Config, ConfigFactory}
 
 object ConfigLoader {
-  def apply(localConfigPropertyName: String = "config.localfile",
-            separator: String = File.pathSeparator,
-            failIfConfigNotFound: Boolean = true,
-            loadDefaults: Boolean = true
-           ): Config = {
-
-
-    apply(
-      System.getProperty(localConfigPropertyName, "")
-        .split(separator)
-        .filterNot(_.trim.isEmpty),
-      failIfConfigNotFound,
-      loadDefaults
-    )
+  def parseConfigProperty(localConfigPropertyName: String = "config.localfile",
+            separator: String = File.pathSeparator): Seq[String] = {
+    System.getProperty(localConfigPropertyName, "")
+      .split(separator)
+      .filterNot(_.trim.isEmpty)
   }
 
-  def apply(configFiles: Seq[String],
+  def apply(configFiles: Seq[String] = parseConfigProperty(),
             failIfConfigNotFound: Boolean,
             loadDefaults: Boolean): Config = {
 

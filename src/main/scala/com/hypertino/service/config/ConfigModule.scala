@@ -1,26 +1,23 @@
 package com.hypertino.service.config
 
-import java.io.File
-
+import com.hypertino.service.config.ConfigLoader.parseConfigProperty
 import com.typesafe.config.Config
 import scaldi.{Injector, Module}
 
-class ConfigModule(localConfigPropertyName: String,
-                   separator: String,
+class ConfigModule(configFiles: Seq[String],
                    failIfConfigNotFound: Boolean,
                    loadDefaults: Boolean) extends Module {
-  val rootConfig = ConfigLoader(localConfigPropertyName, separator, failIfConfigNotFound, loadDefaults)
+  val rootConfig = ConfigLoader(configFiles, failIfConfigNotFound, loadDefaults)
   bind[Config] identifiedBy 'config toNonLazy rootConfig
 }
 
 object ConfigModule {
-  def apply(localConfigPropertyName: String = "config.localfile",
-            separator: String = File.pathSeparator,
+  def apply(configFiles: Seq[String] = parseConfigProperty(),
             failIfConfigNotFound: Boolean = true,
             loadDefaults: Boolean = true,
             injectModulesConfigPath: Option[String] = Some("inject-modules")): Injector = {
 
-    val configModule = new ConfigModule(localConfigPropertyName, separator, failIfConfigNotFound, loadDefaults)
+    val configModule = new ConfigModule(configFiles, failIfConfigNotFound, loadDefaults)
     loadConfigInjectedModules(configModule.rootConfig, injectModulesConfigPath, configModule)
   }
 
