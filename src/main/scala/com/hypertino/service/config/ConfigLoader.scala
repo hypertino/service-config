@@ -13,8 +13,8 @@ object ConfigLoader {
   }
 
   def apply(configFiles: Seq[String] = parseConfigProperty(),
-            failIfConfigNotFound: Boolean,
-            loadDefaults: Boolean): Config = {
+            failIfConfigNotFound: Boolean = true,
+            loadDefaults: Boolean = true): Config = {
 
     val defaults = if(loadDefaults)
       ConfigFactory.load()

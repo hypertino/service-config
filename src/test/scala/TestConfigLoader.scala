@@ -1,6 +1,7 @@
 import java.io.{File, IOException}
 
 import com.hypertino.service.config.ConfigLoader
+import com.hypertino.service.config.ConfigLoader.parseConfigProperty
 import com.typesafe.config.ConfigException
 import org.scalatest.{FreeSpec, Matchers}
 
@@ -12,7 +13,7 @@ class TestConfigLoader extends FreeSpec with Matchers {
 
   "ConfigLoader should load config + command-line-files with system properties" in {
     System.setProperty("test-configs", "./testdata/test-1.conf" + File.pathSeparator + "./testdata/test-2.conf")
-    val config = ConfigLoader(localConfigPropertyName = "test-configs")
+    val config = ConfigLoader(parseConfigProperty("test-configs"))
     config.getString("test-value") shouldBe "shwonder"
     config.getString("test-name") shouldBe "Abraham"
   }
@@ -27,7 +28,7 @@ class TestConfigLoader extends FreeSpec with Matchers {
     System.setProperty("test-configs", "./testdata/not-existing.conf" + File.pathSeparator + "./testdata/test-2.conf")
 
     intercept[IOException] {
-      ConfigLoader(localConfigPropertyName = "test-configs")
+      ConfigLoader(parseConfigProperty("test-configs"))
     }
   }
 
