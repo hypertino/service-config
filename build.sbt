@@ -4,14 +4,14 @@ version := "0.2-SNAPSHOT"
 
 organization := "com.hypertino"
 
-scalaVersion := "2.12.1"
+crossScalaVersions := Seq("2.12.3", "2.11.11")
 
-crossScalaVersions := Seq("2.12.1", "2.11.8")
+scalaVersion := crossScalaVersions.value.head
 
 libraryDependencies ++= Seq(
   "org.scaldi" %% "scaldi" % "0.5.8",
   "com.typesafe" % "config" % "1.2.1",
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+  "org.scalamock" %% "scalamock-scalatest-support" % "3.5.0" % "test"
 )
 
 resolvers ++= Seq(
