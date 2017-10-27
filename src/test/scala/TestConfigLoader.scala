@@ -1,7 +1,7 @@
 import java.io.{File, IOException}
 
 import com.hypertino.service.config.ConfigLoader
-import com.hypertino.service.config.ConfigLoader.parseConfigProperty
+import com.hypertino.service.config.ConfigLoader.parseConfigFilesProperty
 import com.typesafe.config.ConfigException
 import org.scalatest.{FreeSpec, Matchers}
 
@@ -13,7 +13,7 @@ class TestConfigLoader extends FreeSpec with Matchers {
 
   "ConfigLoader should load config + command-line-files with system properties" in {
     System.setProperty("test-configs", "./testdata/test-1.conf" + File.pathSeparator + "./testdata/test-2.conf")
-    val config = ConfigLoader(parseConfigProperty("test-configs"))
+    val config = ConfigLoader(parseConfigFilesProperty("test-configs"))
     config.getString("test-value") shouldBe "shwonder"
     config.getString("test-name") shouldBe "Abraham"
   }
@@ -28,7 +28,7 @@ class TestConfigLoader extends FreeSpec with Matchers {
     System.setProperty("test-configs", "./testdata/not-existing.conf" + File.pathSeparator + "./testdata/test-2.conf")
 
     intercept[IOException] {
-      ConfigLoader(parseConfigProperty("test-configs"))
+      ConfigLoader(parseConfigFilesProperty("test-configs"))
     }
   }
 
@@ -43,5 +43,22 @@ class TestConfigLoader extends FreeSpec with Matchers {
     intercept[ConfigException.Missing] {
       config.getString("test-value") shouldBe "100500"
     }
+  }
+
+  "ConfigLoader should collapse environment" in {
+    val c1 = ConfigLoader()
+    c1.getInt("test-env.int-value") shouldBe 100
+    c1.getString("test-env.object-value.name") shouldBe "default"
+    c1.getString("test-env.object-value.removed") shouldBe "some"
+
+    val c2 = ConfigLoader(environment=Some("prod"))
+    c2.getInt("test-env.int-value") shouldBe 20
+    c2.getString("test-env.object-value.name") shouldBe "production"
+    c2.hasPath("test-env.object-value.removed") shouldBe false
+
+    val c3 = ConfigLoader(environment=Some("qa"))
+    c3.getInt("test-env.int-value") shouldBe 200
+    c3.getString("test-env.object-value.name") shouldBe "qa"
+    c3.hasPath("test-env.object-value.removed") shouldBe false
   }
 }

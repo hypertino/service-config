@@ -1,6 +1,6 @@
 package com.hypertino.service.config
 
-import com.hypertino.service.config.ConfigLoader.parseConfigProperty
+import com.hypertino.service.config.ConfigLoader.parseConfigFilesProperty
 import com.typesafe.config.Config
 import scaldi.{Injector, Module}
 
@@ -12,7 +12,7 @@ class ConfigModule(configFiles: Seq[String],
 }
 
 object ConfigModule {
-  def apply(configFiles: Seq[String] = parseConfigProperty(),
+  def apply(configFiles: Seq[String] = parseConfigFilesProperty(),
             failIfConfigNotFound: Boolean = true,
             loadDefaults: Boolean = true,
             injectModulesConfigPath: Option[String] = Some("inject-modules")): Injector = {
