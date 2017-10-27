@@ -2,7 +2,7 @@ package com.hypertino.service.config
 
 import java.io.{File, FileNotFoundException}
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigObject, ConfigValue}
+import com.typesafe.config._
 
 object ConfigLoader {
   def parseConfigFilesProperty(configFilesPropertyName: String = "config-files",
@@ -20,7 +20,8 @@ object ConfigLoader {
            ): Config = {
 
     val defaults = if (loadDefaults)
-      ConfigFactory.load()
+      // we don't use ConfigFactory.load because it always immediately resolves substitutions
+      ConfigFactory.parseResources("application.conf").withFallback(ConfigFactory.parseResources("reference.conf"))
     else
       ConfigFactory.empty()
 
@@ -30,13 +31,13 @@ object ConfigLoader {
         throw new FileNotFoundException(s"${file.getAbsolutePath} is not found")
       }
       ConfigFactory.parseFile(file).withFallback(conf)
-    }).resolve()
+    })
 
     environment.map { e ⇒
       collapseEnvironment(config, e)
     } getOrElse {
       config
-    }
+    } resolve()
   }
 
   def collapseEnvironment(config: Config, environment: String): Config = {
@@ -56,4 +57,6 @@ object ConfigLoader {
       case _ ⇒ Seq.empty
     }
   }
+
+  private val dontResolve = ConfigResolveOptions.noSystem().setAllowUnresolved(true)
 }
