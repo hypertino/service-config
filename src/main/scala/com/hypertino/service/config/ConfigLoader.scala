@@ -1,6 +1,7 @@
 package com.hypertino.service.config
 
 import java.io.{File, FileNotFoundException}
+import java.util.Properties
 
 import com.typesafe.config._
 
@@ -16,14 +17,22 @@ object ConfigLoader {
              configFiles: Seq[String] = parseConfigFilesProperty(),
              failIfConfigNotFound: Boolean = true,
              loadDefaults: Boolean = true,
+             loadSystemProperties: Boolean = true,
              environment: Option[String] = None
            ): Config = {
 
-    val defaults = if (loadDefaults)
-      // we don't use ConfigFactory.load because it always immediately resolves substitutions
-      ConfigFactory.parseResources("application.conf").withFallback(ConfigFactory.parseResources("reference.conf"))
+    val systemProperties = if (loadSystemProperties)
+      ConfigFactory.parseProperties(System.getProperties)
     else
       ConfigFactory.empty()
+
+    val defaults = if (loadDefaults)
+      // we don't use ConfigFactory.load because it always immediately resolves substitutions in application.conf
+      systemProperties
+        .withFallback(ConfigFactory.parseResources("application.conf"))
+        .withFallback(ConfigFactory.defaultReference)
+    else
+      systemProperties
 
     val config = configFiles.foldLeft(defaults)({ (conf, filePath) ⇒
       val file = new java.io.File(filePath.trim)
