@@ -1,6 +1,13 @@
+/*
+ * Copyright (c) 2017 Magomed Abdurakhmanov, Hypertino
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
 package com.hypertino.service.config
 
-import com.hypertino.service.config.ConfigLoader.parseConfigProperty
+import com.hypertino.service.config.ConfigLoader.parseConfigFilesProperty
 import com.typesafe.config.Config
 import scaldi.{Injector, Module}
 
@@ -12,7 +19,7 @@ class ConfigModule(configFiles: Seq[String],
 }
 
 object ConfigModule {
-  def apply(configFiles: Seq[String] = parseConfigProperty(),
+  def apply(configFiles: Seq[String] = parseConfigFilesProperty(),
             failIfConfigNotFound: Boolean = true,
             loadDefaults: Boolean = true,
             injectModulesConfigPath: Option[String] = Some("inject-modules")): Injector = {
