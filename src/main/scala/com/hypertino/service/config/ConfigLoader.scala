@@ -73,6 +73,4 @@ object ConfigLoader {
       case _ ⇒ Seq.empty
     }
   }
-
-  private val dontResolve = ConfigResolveOptions.noSystem().setAllowUnresolved(true)
 }
