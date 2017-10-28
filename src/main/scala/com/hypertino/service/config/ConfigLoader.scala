@@ -41,12 +41,18 @@ object ConfigLoader {
     else
       systemProperties
 
-    val config = configFiles.foldLeft(defaults)({ (conf, filePath) ⇒
-      val file = new java.io.File(filePath.trim)
-      if (!file.exists && failIfConfigNotFound) {
-        throw new FileNotFoundException(s"${file.getAbsolutePath} is not found")
+    val config = configFiles.foldLeft(defaults)({ (conf, path) ⇒
+      if (path.startsWith("resources://")) {
+        ConfigFactory.parseResources(path.substring("resources://".length),
+          ConfigParseOptions.defaults().setAllowMissing(!failIfConfigNotFound)).withFallback(conf)
       }
-      ConfigFactory.parseFile(file).withFallback(conf)
+      else {
+        val file = new java.io.File(path.trim)
+//        if (!file.exists && failIfConfigNotFound) {
+//          throw new FileNotFoundException(s"${file.getAbsolutePath} is not found")
+//        }
+        ConfigFactory.parseFile(file, ConfigParseOptions.defaults().setAllowMissing(!failIfConfigNotFound)).withFallback(conf)
+      }
     })
 
     environment.map { e ⇒
