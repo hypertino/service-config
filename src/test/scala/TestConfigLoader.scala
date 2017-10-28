@@ -39,16 +39,22 @@ class TestConfigLoader extends FreeSpec with Matchers {
     config.getString("test-name") shouldBe "Abraham"
   }
 
+  "ConfigLoader should load config + command-line-resources directly" in {
+    val config = ConfigLoader(Seq("resources://custom.conf"),true,true)
+    config.getString("custom-value") shouldBe "John"
+    config.getString("test-value") shouldBe "100500"
+  }
+
   "ConfigLoader should fail if config isn't found with system properties" in {
     System.setProperty("test-configs", "./testdata/not-existing.conf" + File.pathSeparator + "./testdata/test-2.conf")
 
-    intercept[IOException] {
+    intercept[ConfigException.IO] {
       ConfigLoader(parseConfigFilesProperty("test-configs"))
     }
   }
 
   "ConfigLoader should fail if config isn't found" in {
-    intercept[IOException] {
+    intercept[ConfigException.IO] {
       ConfigLoader(Seq("./testdata/not-existing.conf"),true,true)
     }
   }
