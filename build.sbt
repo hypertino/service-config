@@ -1,6 +1,6 @@
 name := "service-config"
 
-version := "0.2.2"
+version := "0.2.3"
 
 organization := "com.hypertino"
 
