@@ -60,44 +60,48 @@ class TestConfigLoader extends FreeSpec with Matchers {
   }
 
   "ConfigLoader should not load default config" in {
-    val config = ConfigLoader(loadDefaults=false)
+    val config = ConfigLoader(loadSystemProperties=false,loadDefaults=false)
     intercept[ConfigException.Missing] {
       config.getString("test-value") shouldBe "100500"
     }
   }
 
+  "ConfigLoader should ignore environment if not set" in {
+    val c = ConfigLoader(Seq("resources://application.conf"), loadSystemProperties=false,loadDefaults=false)
+    c.getInt("test-env.int-value") shouldBe 100
+    c.getInt("test-env.resolve") shouldBe 100
+    c.getString("test-env.object-value.name") shouldBe "default"
+    c.getString("test-env.object-value.removed") shouldBe "some"
+    c.getString("test-env.resolve-system-properties") shouldBe "100500"
+  }
+
   "ConfigLoader should collapse environment" in {
-    System.clearProperty("test-overridden-value")
-    val c1 = ConfigLoader()
-    c1.getInt("test-env.int-value") shouldBe 100
-    c1.getInt("test-env.resolve") shouldBe 100
-    c1.getString("test-env.object-value.name") shouldBe "default"
-    c1.getString("test-env.object-value.removed") shouldBe "some"
-    c1.getString("test-env.resolve-system-properties") shouldBe "100500"
+    val c = ConfigLoader(Seq("resources://application.conf"), loadSystemProperties=false, loadDefaults=false, environment = Some("prod"))
+    c.getInt("test-env.int-value") shouldBe 20
+    c.getInt("test-env.resolve") shouldBe 20
+    c.getString("test-env.object-value.name") shouldBe "production"
+    c.hasPath("test-env.object-value.removed") shouldBe false
+    c.getString("test-env.resolve-system-properties") shouldBe "100500"
+  }
 
-    val c2 = ConfigLoader(environment=Some("prod"))
-    c2.getInt("test-env.int-value") shouldBe 20
-    c2.getInt("test-env.resolve") shouldBe 20
-    c2.getString("test-env.object-value.name") shouldBe "production"
-    c2.hasPath("test-env.object-value.removed") shouldBe false
-    c2.getString("test-env.resolve-system-properties") shouldBe "100500"
-
+  "ConfigLoader should collapse environment and resolve system properties" in {
     System.setProperty("test-overridden-value", "12345")
-    val c3 = ConfigLoader(environment=Some("qa"))
-    c3.getInt("test-env.int-value") shouldBe 200
-    c3.getInt("test-env.resolve") shouldBe 200
-    c3.getString("test-env.object-value.name") shouldBe "qa"
-    c3.hasPath("test-env.object-value.removed") shouldBe false
-    c3.getString("test-env.resolve-system-properties") shouldBe "12345"
+    val c = ConfigLoader(Seq("resources://application.conf"), loadSystemProperties=true, loadDefaults=false, environment=Some("qa"))
+    c.getInt("test-env.int-value") shouldBe 200
+    c.getInt("test-env.resolve") shouldBe 200
+    c.getString("test-env.object-value.name") shouldBe "qa"
+    c.hasPath("test-env.object-value.removed") shouldBe false
+    c.getString("test-env.resolve-system-properties") shouldBe "12345"
+    import scala.collection.JavaConverters._
+    c.getConfigList("test-env.array-obj-value-resolve-without-env").asScala.head.getString("name") shouldBe "12345"
   }
 
   "ConfigLoader should collapse environment within arrays" in {
     import scala.collection.JavaConverters._
-    System.clearProperty("test-overridden-value")
-    val c1 = ConfigLoader()
+    val c1 = ConfigLoader(Seq("resources://application.conf"), loadSystemProperties=false, loadDefaults=false)
     c1.getConfigList("test-env.array-obj-value").asScala.head.getString("name") shouldBe "default"
 
-    val c2 = ConfigLoader(environment=Some("prod"))
+    val c2 = ConfigLoader(Seq("resources://application.conf"), loadSystemProperties=false, loadDefaults=false, environment=Some("prod"))
     c2.getConfigList("test-env.array-obj-value").asScala.head.getString("name") shouldBe "prod"
   }
 }
