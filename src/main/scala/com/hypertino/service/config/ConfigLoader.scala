@@ -6,10 +6,7 @@
  */
 
 package com.hypertino.service.config
-
-import java.io.{File, FileNotFoundException}
-import java.util.Properties
-
+import java.io.File
 import com.typesafe.config._
 
 object ConfigLoader {
@@ -28,6 +25,7 @@ object ConfigLoader {
              environment: Option[String] = None
            ): Config = {
 
+    // systemProperties has top-priority to be able to override everything later
     val systemProperties = if (loadSystemProperties)
       ConfigFactory.parseProperties(System.getProperties)
     else
@@ -35,25 +33,20 @@ object ConfigLoader {
 
     val defaults = if (loadDefaults)
       // we don't use ConfigFactory.load because it always immediately resolves substitutions in application.conf
-      systemProperties
-        .withFallback(ConfigFactory.parseResources("application.conf"))
-        .withFallback(ConfigFactory.defaultReference)
+      ConfigFactory.parseResources("application.conf").withFallback(ConfigFactory.defaultReference)
     else
-      systemProperties
+      ConfigFactory.empty()
 
-    val config = configFiles.foldLeft(defaults)({ (conf, path) ⇒
+    val config = systemProperties.withFallback(configFiles.foldLeft(defaults)({ (conf, path) ⇒
       if (path.startsWith("resources://")) {
         ConfigFactory.parseResources(path.substring("resources://".length),
           ConfigParseOptions.defaults().setAllowMissing(!failIfConfigNotFound)).withFallback(conf)
       }
       else {
         val file = new java.io.File(path.trim)
-//        if (!file.exists && failIfConfigNotFound) {
-//          throw new FileNotFoundException(s"${file.getAbsolutePath} is not found")
-//        }
         ConfigFactory.parseFile(file, ConfigParseOptions.defaults().setAllowMissing(!failIfConfigNotFound)).withFallback(conf)
       }
-    })
+    }))
 
     environment.map { e ⇒
       collapseEnvironment(config, e)
@@ -63,46 +56,56 @@ object ConfigLoader {
   }
 
   def collapseEnvironment(config: Config, environment: String): Config = {
-    substitutions("", config, "~" + environment)
-      .foldLeft(config) { (latest, i) ⇒
-        latest.withValue(i._1, i._2)
-      }
+    val sb = new StringBuilder
+    renderSubstitutedConfig(config.root(), "~" + environment, sb)
+    ConfigFactory.parseString(sb.toString, ConfigParseOptions.defaults())
   }
 
-  private def substitutions(path: String, config: Config, envSuffix: String): Seq[(String,ConfigValue)] = {
+  private val jsonRenderOptions = ConfigRenderOptions.concise().setJson(true)
+
+  private def renderSubstitutedConfig(configObject: ConfigObject, envSuffix: String, to: StringBuilder): Unit = {
     import scala.collection.JavaConverters._
-    config.root().asScala.toSeq.flatMap {
-      case (key,v) if key.endsWith(envSuffix) ⇒
-        Seq((if (path.isEmpty) "" else path + ".") + key.substring(0, key.length - envSuffix.length) -> v)
+    val m = configObject.asScala
+    to.append("{")
+    withCommas(m, to) {
+      case (key, v) if !key.endsWith(envSuffix) && m.contains(key + envSuffix) =>
+        to.append(ConfigUtil.quoteString(key))
+        to.append(":")
+        to.append(m(key+envSuffix).render(jsonRenderOptions))
+
       case (key, v: ConfigObject) ⇒
-        substitutions(if (path.isEmpty) key else path + "." + key, v.toConfig, envSuffix)
-      case (key, v: ConfigList) =>
-        Seq((if (path.isEmpty) key else path + "." + key,
-          ConfigValueFactory.fromIterable(
-          v.asScala.map{
-            case o: ConfigObject => substituteArrayElement(o, envSuffix).unwrapped()
-            case other => other.unwrapped()
-          }.asJava
-        )))
-      case _ ⇒ Seq.empty
+        to.append(ConfigUtil.quoteString(key))
+        to.append(":")
+        renderSubstitutedConfig(v, envSuffix, to)
+
+      case (key, v: ConfigList) ⇒
+        to.append(ConfigUtil.quoteString(key))
+        to.append(":")
+        to.append("[")
+        withCommas(v.asScala, to) {
+          case iv: ConfigObject =>
+            renderSubstitutedConfig(iv, envSuffix, to)
+          case other =>
+            to.append(other.render(jsonRenderOptions))
+        }
+        to.append("]")
+
+      case (key, v) =>
+        to.append(ConfigUtil.quoteString(key))
+        to.append(":")
+        to.append(v.render(jsonRenderOptions))
     }
+    to.append("}")
   }
 
-  // sadly this doesn't work without resolving, we only use on array elements
-  private def substituteArrayElement(configObject: ConfigObject, envSuffix: String): ConfigObject = {
-    import scala.collection.JavaConverters._
-    val objectMap = configObject.asScala.map {
-      case (key, v: ConfigObject) ⇒ key -> substituteArrayElement(v, envSuffix).unwrapped()
-      case (key, v: ConfigList) ⇒ key -> v.asScala.map {
-        case iv: ConfigObject => substituteArrayElement(iv, envSuffix).unwrapped()
-        case other => other.unwrapped()
+  private def withCommas[T](iterable: Iterable[T], to: StringBuilder)(code: (T) => Unit): Unit = {
+    var comma = false
+    iterable.foreach { i =>
+      if (comma) {
+        to.append(",")
       }
-      case (key,v) => key -> v.unwrapped()
+      comma = true
+      code(i)
     }
-    val objectMapNew = objectMap.filter(_._1.endsWith(envSuffix)).map { case (key, v) =>
-      key.substring(0, key.length - envSuffix.length) -> v
-    }
-
-    ConfigValueFactory.fromMap((objectMap ++ objectMapNew).asJava)
   }
 }
