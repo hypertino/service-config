@@ -76,7 +76,33 @@ object ConfigLoader {
         Seq((if (path.isEmpty) "" else path + ".") + key.substring(0, key.length - envSuffix.length) -> v)
       case (key, v: ConfigObject) ⇒
         substitutions(if (path.isEmpty) key else path + "." + key, v.toConfig, envSuffix)
+      case (key, v: ConfigList) =>
+        Seq((if (path.isEmpty) key else path + "." + key,
+          ConfigValueFactory.fromIterable(
+          v.asScala.map{
+            case o: ConfigObject => substituteArrayElement(o, envSuffix).unwrapped()
+            case other => other.unwrapped()
+          }.asJava
+        )))
       case _ ⇒ Seq.empty
     }
+  }
+
+  // sadly this doesn't work without resolving, we only use on array elements
+  private def substituteArrayElement(configObject: ConfigObject, envSuffix: String): ConfigObject = {
+    import scala.collection.JavaConverters._
+    val objectMap = configObject.asScala.map {
+      case (key, v: ConfigObject) ⇒ key -> substituteArrayElement(v, envSuffix).unwrapped()
+      case (key, v: ConfigList) ⇒ key -> v.asScala.map {
+        case iv: ConfigObject => substituteArrayElement(iv, envSuffix).unwrapped()
+        case other => other.unwrapped()
+      }
+      case (key,v) => key -> v.unwrapped()
+    }
+    val objectMapNew = objectMap.filter(_._1.endsWith(envSuffix)).map { case (key, v) =>
+      key.substring(0, key.length - envSuffix.length) -> v
+    }
+
+    ConfigValueFactory.fromMap((objectMap ++ objectMapNew).asJava)
   }
 }

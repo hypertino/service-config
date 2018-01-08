@@ -91,7 +91,7 @@ class TestConfigLoader extends FreeSpec with Matchers {
     c3.getString("test-env.resolve-system-properties") shouldBe "12345"
   }
 
-  "ConfigLoader should collapse environment within arrays" ignore {
+  "ConfigLoader should collapse environment within arrays" in {
     import scala.collection.JavaConverters._
     System.clearProperty("test-overridden-value")
     val c1 = ConfigLoader()
