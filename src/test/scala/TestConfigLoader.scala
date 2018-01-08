@@ -90,4 +90,14 @@ class TestConfigLoader extends FreeSpec with Matchers {
     c3.hasPath("test-env.object-value.removed") shouldBe false
     c3.getString("test-env.resolve-system-properties") shouldBe "12345"
   }
+
+  "ConfigLoader should collapse environment within arrays" ignore {
+    import scala.collection.JavaConverters._
+    System.clearProperty("test-overridden-value")
+    val c1 = ConfigLoader()
+    c1.getConfigList("test-env.array-obj-value").asScala.head.getString("name") shouldBe "default"
+
+    val c2 = ConfigLoader(environment=Some("prod"))
+    c2.getConfigList("test-env.array-obj-value").asScala.head.getString("name") shouldBe "prod"
+  }
 }
