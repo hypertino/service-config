@@ -92,12 +92,17 @@ class TestConfigLoader extends FreeSpec with Matchers {
     c.getString("test-env.object-value.name") shouldBe "qa"
     c.hasPath("test-env.object-value.removed") shouldBe false
     c.getString("test-env.resolve-system-properties") shouldBe "12345"
+  }
+
+  "ConfigLoader should collapse environment with unresolved array items" ignore {
+    System.setProperty("test-overridden-value", "12345")
+    val c = ConfigLoader(Seq("resources://application.conf"), loadSystemProperties=true, loadDefaults=false, environment=Some("qa"))
     import scala.collection.JavaConverters._
     c.getConfigList("test-env.array-obj-value-resolve-without-env").asScala.head.getString("name") shouldBe "12345"
   }
 
   "ConfigLoader should not fail when ConfigDelayedMerge is used" in {
-    val c = ConfigLoader(Seq("resources://application.conf"), loadSystemProperties=false, loadDefaults=true, environment=Some("qa"))
+    val c = ConfigLoader(Seq("resources://application.conf"), loadSystemProperties=true, loadDefaults=false, environment=Some("qa"))
     c.getInt("test-env.int-value") shouldBe 200
   }
 
