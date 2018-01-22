@@ -33,32 +33,36 @@ object ConfigLoader {
 
     val defaults = if (loadDefaults)
       // we don't use ConfigFactory.load because it always immediately resolves substitutions in application.conf
-      ConfigFactory.parseResources("application.conf").withFallback(ConfigFactory.defaultReference)
+      collapseEnvironment(ConfigFactory.parseResources("application.conf"), environment)
+        .withFallback(collapseEnvironment(ConfigFactory.defaultReference, environment))
     else
       ConfigFactory.empty()
 
-    val config = systemProperties.withFallback(configFiles.foldLeft(defaults)({ (conf, path) ⇒
+    val config = collapseEnvironment(systemProperties, environment)
+      .withFallback(configFiles.foldLeft(defaults)({ (conf, path) ⇒
       if (path.startsWith("resources://")) {
-        ConfigFactory.parseResources(path.substring("resources://".length),
-          ConfigParseOptions.defaults().setAllowMissing(!failIfConfigNotFound)).withFallback(conf)
+        collapseEnvironment(ConfigFactory.parseResources(path.substring("resources://".length),
+          ConfigParseOptions.defaults().setAllowMissing(!failIfConfigNotFound)), environment)
+          .withFallback(conf)
       }
       else {
         val file = new java.io.File(path.trim)
-        ConfigFactory.parseFile(file, ConfigParseOptions.defaults().setAllowMissing(!failIfConfigNotFound)).withFallback(conf)
+        collapseEnvironment(ConfigFactory.parseFile(file, ConfigParseOptions.defaults().setAllowMissing(!failIfConfigNotFound)), environment)
+          .withFallback(conf)
       }
     }))
 
-    environment.map { e ⇒
-      collapseEnvironment(config, e)
-    } getOrElse {
-      config
-    } resolve()
+    config.resolve()
   }
 
-  def collapseEnvironment(config: Config, environment: String): Config = {
-    val sb = new StringBuilder
-    renderSubstitutedConfig(config.root(), "~" + environment, sb)
-    ConfigFactory.parseString(sb.toString, ConfigParseOptions.defaults())
+  def collapseEnvironment(config: Config, environment: Option[String]): Config = {
+    environment.map { e ⇒
+      val sb = new StringBuilder
+      renderSubstitutedConfig(config.root(), "~" + e, sb)
+      ConfigFactory.parseString(sb.toString, ConfigParseOptions.defaults())
+    } getOrElse {
+      config
+    }
   }
 
   private val jsonRenderOptions = ConfigRenderOptions.concise().setJson(true)
