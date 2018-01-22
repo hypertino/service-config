@@ -66,36 +66,56 @@ object ConfigLoader {
     import scala.collection.JavaConverters._
     config.root().asScala.toSeq.flatMap {
       case (key,v) if key.endsWith(envSuffix) ⇒
-        Seq((if (path.isEmpty) "" else path + ".") + key.substring(0, key.length - envSuffix.length) -> v)
+        Seq((if (path.isEmpty) "" else path + ".") + ConfigUtil.quoteString(key.substring(0, key.length - envSuffix.length)) -> v)
       case (key, v: ConfigObject) ⇒
-        substitutions(if (path.isEmpty) key else path + "." + key, v.toConfig, envSuffix)
+        substitutions(if (path.isEmpty) ConfigUtil.quoteString(key) else path + "." + ConfigUtil.quoteString(key), v.toConfig, envSuffix)
       case (key, v: ConfigList) =>
-        Seq((if (path.isEmpty) key else path + "." + key,
+        var substituted = false
+        val seq = Seq((if (path.isEmpty) ConfigUtil.quoteString(key) else path + "." + ConfigUtil.quoteString(key),
           ConfigValueFactory.fromIterable(
             v.asScala.map{
-              case o: ConfigObject => substituteArrayElement(o, envSuffix).unwrapped()
+              case o: ConfigObject => {
+                val inner = substituteArrayElement(o, envSuffix)
+                if (inner._2)
+                  substituted = true
+                inner._1.unwrapped()
+              }
               case other => other.unwrapped()
             }.asJava
           )))
-      case _ ⇒ Seq.empty
+        if (substituted) seq else Seq.empty
+      case (key, v) ⇒
+        Seq.empty
     }
   }
 
   // sadly this doesn't work without resolving, we only use on array elements
-  private def substituteArrayElement(configObject: ConfigObject, envSuffix: String): ConfigObject = {
+  private def substituteArrayElement(configObject: ConfigObject, envSuffix: String): (ConfigObject, Boolean) = {
     import scala.collection.JavaConverters._
+    var substituted = false
     val objectMap = configObject.asScala.map {
-      case (key, v: ConfigObject) ⇒ key -> substituteArrayElement(v, envSuffix).unwrapped()
-      case (key, v: ConfigList) ⇒ key -> v.asScala.map {
-        case iv: ConfigObject => substituteArrayElement(iv, envSuffix).unwrapped()
-        case other => other.unwrapped()
+      case (key, v: ConfigObject) ⇒ key -> {
+        val inner = substituteArrayElement(v, envSuffix)
+        if (inner._2)
+          substituted = true
+        inner._1.unwrapped()
       }
+      case (key, v: ConfigList) ⇒ key -> v.asScala.map {
+        case iv: ConfigObject => {
+          val inner = substituteArrayElement(iv, envSuffix)
+          if (inner._2)
+            substituted = true
+          inner._1.unwrapped()
+        }
+        case other => other.unwrapped()
+      }.asJava
       case (key,v) => key -> v.unwrapped()
     }
     val objectMapNew = objectMap.filter(_._1.endsWith(envSuffix)).map { case (key, v) =>
+      substituted = true
       key.substring(0, key.length - envSuffix.length) -> v
     }
 
-    ConfigValueFactory.fromMap((objectMap ++ objectMapNew).asJava)
+    (ConfigValueFactory.fromMap((objectMap ++ objectMapNew).asJava), substituted)
   }
 }
