@@ -106,6 +106,13 @@ class TestConfigLoader extends FreeSpec with Matchers {
     c.getInt("test-env.int-value") shouldBe 200
   }
 
+  "ConfigLoader should not fail when keys is quoted" in {
+    val c = ConfigLoader(Seq("resources://application.conf"), loadSystemProperties=false, loadDefaults=false, environment=Some("qa"))
+    c.getInt("test-env.\"quoted key\"") shouldBe 2
+    import scala.collection.JavaConverters._
+    c.getConfigList("test-env.\"quoted key inside array\"").asScala.head.getInt("\":+\"") shouldBe 2
+  }
+
   "ConfigLoader should collapse environment within arrays" in {
     import scala.collection.JavaConverters._
     val c1 = ConfigLoader(Seq("resources://application.conf"), loadSystemProperties=false, loadDefaults=false)
@@ -113,5 +120,10 @@ class TestConfigLoader extends FreeSpec with Matchers {
 
     val c2 = ConfigLoader(Seq("resources://application.conf"), loadSystemProperties=false, loadDefaults=false, environment=Some("prod"))
     c2.getConfigList("test-env.array-obj-value").asScala.head.getString("name") shouldBe "prod"
+  }
+
+  "ConfigLoader should override fallback values" in {
+    val config = ConfigLoader(Seq("resources://custom.conf"),true,true, environment=Some("qa"))
+    config.getInt("fallback-overridden-value") shouldBe 2
   }
 }
