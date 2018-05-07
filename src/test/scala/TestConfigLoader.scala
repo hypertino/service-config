@@ -94,11 +94,17 @@ class TestConfigLoader extends FreeSpec with Matchers {
     c.getString("test-env.resolve-system-properties") shouldBe "12345"
   }
 
-  "ConfigLoader should collapse environment with unresolved array items" ignore {
-    System.setProperty("test-overridden-value", "12345")
-    val c = ConfigLoader(Seq("resources://application.conf"), loadSystemProperties=true, loadDefaults=false, environment=Some("qa"))
+  "ConfigLoader should collapse environment with unresolved array items" in {
+    val c1 = ConfigLoader(Seq("resources://application-unresolved-array.conf"), loadSystemProperties=false, loadDefaults=true, environment=Some("qa"))
     import scala.collection.JavaConverters._
-    c.getConfigList("test-env.array-obj-value-resolve-without-env").asScala.head.getString("name") shouldBe "12345"
+    c1.getConfigList("test-env.array-obj-value-resolve-without-env").asScala.head.getString("dir") shouldBe "100500"
+
+    System.setProperty("test-overridden-value", "12345")
+    val c2 = ConfigLoader(Seq("resources://application-unresolved-array.conf"), loadSystemProperties=true, loadDefaults=false, environment=Some("qa"))
+    c2.getConfigList("test-env.array-obj-value-resolve-without-env").asScala.head.getString("dir") shouldBe "12345"
+
+    val c3 = ConfigLoader(Seq("resources://application-unresolved-array.conf"), loadSystemProperties=true, loadDefaults=true, environment=Some("qa"))
+    c3.getConfigList("test-env.array-obj-value-resolve-without-env").asScala.head.getString("dir") shouldBe "12345"
   }
 
   "ConfigLoader should not fail when ConfigDelayedMerge is used" in {
